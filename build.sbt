@@ -1,5 +1,5 @@
 ThisBuild / organization := "com.example"
-ThisBuild / scalaVersion := "3.0.0"
+ThisBuild / scalaVersion := "3.3.0"
 
 lazy val root = (project in file(".")).settings(
   name := "newsletter-service",
@@ -11,6 +11,8 @@ lazy val root = (project in file(".")).settings(
     "org.typelevel" %% "cats-effect-kernel" % "3.3.12",
     // standard "effect" library (Queues, Console, Random etc.)
     "org.typelevel" %% "cats-effect-std" % "3.3.12",
-    "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
+    "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
+    "org.flywaydb" % "flyway-core" % "9.21.1",
+    "com.github.pureconfig" %% "pureconfig-core" % "0.17.4",
   )
 )
