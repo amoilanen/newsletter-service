@@ -14,5 +14,11 @@ lazy val root = (project in file(".")).settings(
     "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
     "org.flywaydb" % "flyway-core" % "9.21.1",
     "com.github.pureconfig" %% "pureconfig-core" % "0.17.4",
+    "org.postgresql" % "postgresql" % "42.6.0",
+    // Start with this one
+    "org.tpolecat" %% "doobie-core" % "1.0.0-RC4",
+    // And add any of these as needed
+    "org.tpolecat" %% "doobie-hikari" % "1.0.0-RC4", // HikariCP transactor.
+    "org.tpolecat" %% "doobie-postgres" % "1.0.0-RC4", // Postgres driver 42.6.0 + type mappings.
   )
 )
