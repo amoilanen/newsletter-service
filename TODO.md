@@ -1,4 +1,6 @@
 - Add database access layer and migrations, several tables: newsletters, newsletter issues, and subscribers
+  -- Add scalafmt
+  -- Organize dependencies in the build.sbt
 - Possible to create a newsletter via REST API, CRUD operations
 - Possible to add a subscriber to a newsletter via REST API
 - Possible to add a subscriber via an SQS message

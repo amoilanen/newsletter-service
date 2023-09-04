@@ -24,7 +24,9 @@ object Main extends IOApp.Simple:
   def loadResources(): Resource[IO, Resources] =
     for
       config <- loadConfig()
-      transactor <- Database.createTransactor(config.database)
+      dataSource <- Database.createDataSource(config.database)
+      transactor <- Database.createTransactor(config.database, dataSource)
+      _ <- Resource.eval(Database.runMigrations(dataSource))
     yield
       Resources(config, transactor)
 

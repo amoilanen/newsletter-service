@@ -20,5 +20,7 @@ lazy val root = (project in file(".")).settings(
     // And add any of these as needed
     "org.tpolecat" %% "doobie-hikari" % "1.0.0-RC4", // HikariCP transactor.
     "org.tpolecat" %% "doobie-postgres" % "1.0.0-RC4", // Postgres driver 42.6.0 + type mappings.
+    "org.typelevel" %% "cats-core" % "2.10.0",
+    "com.zaxxer" % "HikariCP" % "5.0.1",
   )
 )
