@@ -1,4 +1,4 @@
 create table newsletter (
-  id int not null,
+  id serial primary key,
   title varchar(255) not null
 );
