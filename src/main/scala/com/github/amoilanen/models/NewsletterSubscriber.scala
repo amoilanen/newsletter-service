@@ -1,5 +1,3 @@
 package com.github.amoilanen.models
 
-class NewsletterSubscriber {
-
-}
+case class NewsletterSubscriber(email: String)
