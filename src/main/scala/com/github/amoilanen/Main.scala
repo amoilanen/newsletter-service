@@ -23,19 +23,17 @@ object Main extends IOApp.Simple:
 
   def loadResources(): Resource[IO, Resources] =
     for
-      config <- loadConfig()
+      config     <- loadConfig()
       dataSource <- Database.createDataSource(config.database)
       transactor <- Database.createTransactor(config.database, dataSource)
-      _ <- Resource.eval(Database.runMigrations(dataSource))
-    yield
-      Resources(config, transactor)
+      _          <- Resource.eval(Database.runMigrations(dataSource))
+    yield Resources(config, transactor)
 
   override val run: IO[Unit] =
     loadResources().use({ case Resources(config, transactor) =>
       for
-        _ <- IO(println(config.database.url))
+        _      <- IO(println(config.database.url))
         result <- sql"select 42".query[Int].unique.transact(transactor)
-        _ <- IO(println(result))
-      yield
-        ()
+        _      <- IO(println(result))
+      yield ()
     })

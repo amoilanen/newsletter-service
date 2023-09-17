@@ -31,22 +31,25 @@ object Database:
       HikariDataSource(config)
     })
 
-  def createTransactor(databaseConfig: DatabaseConfig, dataSource: DataSource): Resource[IO, Transactor[IO]] =
-    for
-      ce <- ExecutionContexts.fixedThreadPool[IO](databaseConfig.maxPoolSize)
+  def createTransactor(
+      databaseConfig: DatabaseConfig,
+      dataSource: DataSource
+  ): Resource[IO, Transactor[IO]] =
+    for ce <- ExecutionContexts.fixedThreadPool[IO](databaseConfig.maxPoolSize)
     yield Transactor.fromDataSource[IO](dataSource, ce)
 
   def runMigrations(dataSource: DataSource): IO[Unit] =
     IO.fromEither(
       for
-        flyway <- Try(Flyway.configure.dataSource(dataSource).load).toEither
+        flyway          <- Try(Flyway.configure.dataSource(dataSource).load).toEither
         migrationResult <- Try(flyway.migrate()).toEither
         result <- migrationResult match
           case result: MigrateErrorResult =>
             val error = result.error
-            ApplicationError(s"Migration failed, ${result}, message = ${error.message}, errorCode = ${error.errorCode}, stacktrace = ${error.stackTrace}").asLeft
+            ApplicationError(
+              s"Migration failed, ${result}, message = ${error.message}, errorCode = ${error.errorCode}, stacktrace = ${error.stackTrace}"
+            ).asLeft
           case _ =>
             ().asRight
-      yield
-        result
+      yield result
     )
