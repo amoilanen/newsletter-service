@@ -1,13 +1,23 @@
 - Add database access layer and migrations, several tables: newsletters, newsletter issues, and subscribers
   -- Add scalafmt
   -- Organize dependencies in the build.sbt
-- Possible to create a newsletter via REST API, CRUD operations
+- REST API, basic operations: 
+  -- Create newsletter
+  -- Delete newsletter
+  -- Update owner (email, name)
+  -- Add issue to a newsletter
+  -- Edit issue in a newsletter
+  -- Add subscriber to a newsletter
+  -- Delete subscriber from a newsletter
+  -- Delete subscriber from all newsletters
 - Possible to add a subscriber to a newsletter via REST API
 - Possible to add a subscriber via an SQS message
-- Possible to publish a new newsletter issue via REST API
-- Possible to publish a new newsletter issue via an SQS message
-- When a new newsletter issue is pushed or updated it is possible to set a flag to publish it also. 
-- If the flag is set the newsletter gets published: the subscribers get the emails sent using AWS SES.
+- Possible to create and publish a new newsletter issue via REST API
+- Possible to create and publish a new newsletter issue via an SQS message
+- When a new newsletter issue is pushed or updated it is possible to set a flag to publish it automatically also
+- If the flag is set the newsletter gets published: the subscribers get the emails sent using AWS SES
+
+- Add support for markdown rendering for a newsletter issue
 
 - Local development environment with localstack, kind
 - Deploy "production ready" service to AWS/EKS - Kubernetes

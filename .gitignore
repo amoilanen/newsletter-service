@@ -7,4 +7,6 @@
 hs_err_pid*
 target/*
 project/target/*
+integration/target/*
+integration/project/target/*
 volume/*
