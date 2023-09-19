@@ -11,18 +11,16 @@ import com.github.amoilanen.models.attributes.NewsletterAttributes
 import doobie.ConnectionIO
 import doobie.implicits.*
 
-class NewsletterRepository {
+trait NewsletterRepository:
+  def createNewsletter(newsletterAttributes: NewsletterAttributes): ConnectionIO[NewsletterId]
 
-  def createNewsletter(newsletterAttributes: NewsletterAttributes): ConnectionIO[Newsletter] =
-    val NewsletterOwner(name, email) = newsletterAttributes.owner
-    val title                        = newsletterAttributes.title
-    for id <-
-        sql"insert into newsletter (title, owner_name, owner_email) values ($title, $name, $email)".update
-          .withUniqueGeneratedKeys[BigDecimal]("id")
-    yield Newsletter(
-      NewsletterId(id),
-      newsletterAttributes,
-      subscribers = Set.empty,
-      issues = Seq.empty
-    )
-}
+object NewsletterRepository:
+  def impl(): NewsletterRepository =
+    new NewsletterRepository:
+      override def createNewsletter(newsletterAttributes: NewsletterAttributes): ConnectionIO[NewsletterId] =
+        val NewsletterOwner(name, email) = newsletterAttributes.owner
+        val title = newsletterAttributes.title
+        for id <-
+              sql"insert into newsletter (title, owner_name, owner_email) values ($title, $name, $email)".update
+                .withUniqueGeneratedKeys[BigDecimal]("id")
+        yield NewsletterId(id)

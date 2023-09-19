@@ -15,22 +15,8 @@ import scala.util.Try
 
 object Main extends IOApp.Simple:
 
-  case class Resources(config: AppConfig, transactor: Transactor[IO])
-
-  def loadConfig(): Resource[IO, AppConfig] =
-    val source = ConfigSource.default
-    Resource.eval(IO.fromTry(Try(source.loadOrThrow[AppConfig])))
-
-  def loadResources(): Resource[IO, Resources] =
-    for
-      config     <- loadConfig()
-      dataSource <- Database.createDataSource(config.database)
-      transactor <- Database.createTransactor(config.database, dataSource)
-      _          <- Resource.eval(Database.runMigrations(dataSource))
-    yield Resources(config, transactor)
-
   override val run: IO[Unit] =
-    loadResources().use({ case Resources(config, transactor) =>
+    Resources.loadResources().use({ case Resources(config, transactor) =>
       for
         _      <- IO(println(config.database.url))
         result <- sql"select 42".query[Int].unique.transact(transactor)
