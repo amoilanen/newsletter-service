@@ -8,6 +8,7 @@
   -- Add subscriber to a newsletter
   -- Delete subscriber from a newsletter
   -- Delete subscriber from all newsletters
+  -- Add OpenAPI definition generated from the Tapir definition
 - Possible to add a subscriber to a newsletter via REST API
 - Possible to add a subscriber via an SQS message
 - Possible to create and publish a new newsletter issue via REST API

@@ -11,9 +11,10 @@ import doobie.implicits.*
 import doobie.util.transactor
 import munit.CatsEffectSuite
 
-class NewsletterRepositoryItSuite extends CatsEffectSuite with DoobieSuite {
+class NewsletterRepositoryItSuite extends CatsEffectSuite with DoobieSuite:
 
   override def setupTransactor(): Resource[IO, Transactor[IO]] =
+    //TODO: In this case setup only the DataSource without the HTTP server: more lightweight
     Resources.loadResources().map(_.transactor)
 
   test("Newsletter can be persisted") {
@@ -27,4 +28,3 @@ class NewsletterRepositoryItSuite extends CatsEffectSuite with DoobieSuite {
     yield
       assertEquals(persistedNewsletters, List(expectedPersistedNewsletter))
   }
-}

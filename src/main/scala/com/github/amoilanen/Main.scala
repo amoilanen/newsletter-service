@@ -16,10 +16,12 @@ import scala.util.Try
 object Main extends IOApp.Simple:
 
   override val run: IO[Unit] =
-    Resources.loadResources().use({ case Resources(config, transactor) =>
+    Resources.loadResources().use({ case Resources(config, transactor, httpServer) =>
       for
         _      <- IO(println(config.database.url))
         result <- sql"select 42".query[Int].unique.transact(transactor)
         _      <- IO(println(result))
+        _ <- IO.println(s"Go to http://localhost:${httpServer.address.getPort}/docs to open SwaggerUI. Press ENTER key to exit.")
+        _ <- IO.readLine
       yield ()
     })
