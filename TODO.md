@@ -1,6 +1,7 @@
 - Add database access layer and migrations, several tables: newsletters, newsletter issues, and subscribers
 - REST API, basic operations: 
   -- Create newsletter
+     -- Add validation?
   -- Delete newsletter
   -- Update owner (email, name)
   -- Add issue to a newsletter

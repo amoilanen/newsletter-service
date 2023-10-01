@@ -1,5 +1,6 @@
 package com.github.amoilanen
 
+import cats.data.EitherT
 import sttp.tapir.*
 import cats.effect.IO
 import cats.syntax.either.*
@@ -11,9 +12,11 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import com.github.amoilanen.models.{Newsletter, NewsletterId, NewsletterOwner}
 import com.github.amoilanen.models.attributes.NewsletterAttributes
 import com.github.amoilanen.models.response.ErrorResponse
+import com.github.amoilanen.repositories.NewsletterRepository
+import com.github.amoilanen.services.NewsletterService
 import io.circe.Json
 
-object Endpoints:
+class Endpoints(val newsletterService: NewsletterService):
 
   /*
    * POST /newsletters
@@ -43,16 +46,21 @@ object Endpoints:
       .errorOut(jsonBody[ErrorResponse])
       .description("Get a newsletter")
 
-  val postNewsletter: PublicEndpoint[NewsletterAttributes, ErrorResponse, Newsletter, Any] =
+  val postNewsletter: PublicEndpoint[NewsletterAttributes, ErrorResponse, NewsletterId, Any] =
     endpoint.post
       .in("newsletters")
       .in(jsonBody[NewsletterAttributes])
-      .out(jsonBody[Newsletter])
+      .out(jsonBody[NewsletterId])
       .errorOut(jsonBody[ErrorResponse])
       .description("Create a new newsletter")
+  val postNewsletterServerEndpoint = postNewsletter.serverLogic[IO](newsletterAttributes =>
+    EitherT(newsletterService.createNewsletter(newsletterAttributes).attempt).leftMap(error =>
+      ErrorResponse(error.getMessage)
+    ).value
+  )
 
   //TODO: Implement the rest of the endpoints
-  val apiEndpoints: List[ServerEndpoint[Any, IO]] = List(getNewslettersServerEndpoint)
+  val apiEndpoints: List[ServerEndpoint[Any, IO]] = List(getNewslettersServerEndpoint, postNewsletterServerEndpoint)
 
   val docEndpoints: List[ServerEndpoint[Any, IO]] = SwaggerInterpreter()
     .fromServerEndpoints[IO](apiEndpoints, "newsletter-service", "0.0.1")
