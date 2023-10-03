@@ -12,9 +12,7 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import com.github.amoilanen.models.{Newsletter, NewsletterId, NewsletterOwner}
 import com.github.amoilanen.models.attributes.NewsletterAttributes
 import com.github.amoilanen.models.response.ErrorResponse
-import com.github.amoilanen.repositories.NewsletterRepository
 import com.github.amoilanen.services.NewsletterService
-import io.circe.Json
 
 class Endpoints(val newsletterService: NewsletterService):
 
