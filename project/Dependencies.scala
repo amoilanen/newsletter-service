@@ -15,6 +15,7 @@ object Dependencies {
     val Http4s = "0.23.23"
     val Mockito = "5.5.0"
     val Sttp = "3.9.0"
+    val Circe = "0.14.6"
   }
 
   val catsEffect = Seq(
@@ -37,6 +38,7 @@ object Dependencies {
   ).map("org.tpolecat" %% _ % Version.Doobie)
    // Postgres driver 42.6.0 + type mappings.
   val hikari = "com.zaxxer" % "HikariCP" % Version.Hikari
+  val circe = "io.circe" %% "circe-core" % Version.Circe
 
   val http4s =
     "org.http4s" %% "http4s-ember-server" % Version.Http4s
@@ -49,7 +51,7 @@ object Dependencies {
 
   val dependencies = catsEffect ++ Seq(catsCore) ++ Seq(flywayDb) ++
     Seq(pureconfigCore) ++ Seq(postgresqlDriver) ++ doobie ++
-    Seq(hikari) ++ tapir ++ Seq(http4s)
+    Seq(hikari) ++ tapir ++ Seq(http4s) ++ Seq(circe)
 
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % Version.MunitCatsEffect
   val mockito = "org.mockito" % "mockito-core" % Version.Mockito
