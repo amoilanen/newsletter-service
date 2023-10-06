@@ -34,7 +34,9 @@ class Endpoints(val newsletterService: NewsletterService):
       .errorOut(jsonBody[ErrorResponse])
       .description("List all newsletters")
   val getNewslettersServerEndpoint = getNewsletters.serverLogic[IO](_ =>
-    IO.pure(hardcodedNewsletters.asRight)
+    EitherT(newsletterService.getNewsletters().attempt).leftMap(error =>
+      ErrorResponse(error.getMessage)
+    ).value
   )
 
   val getNewsletter: PublicEndpoint[BigDecimal, ErrorResponse, Newsletter, Any] =
@@ -64,18 +66,3 @@ class Endpoints(val newsletterService: NewsletterService):
     .fromServerEndpoints[IO](apiEndpoints, "newsletter-service", "0.0.1")
 
   val all: List[ServerEndpoint[Any, IO]] = apiEndpoints ++ docEndpoints
-
-  private val hardcodedNewsletters = List(
-    Newsletter(
-      NewsletterId(BigDecimal(1)),
-      NewsletterAttributes("Awesome Scala 3", NewsletterOwner("Mikko Meikäläinen", "m.meikäläinen@elisa.fi"))
-    ),
-    Newsletter(
-      NewsletterId(BigDecimal(2)),
-      NewsletterAttributes("Amazing COBOL", NewsletterOwner("Mikko Meikäläinen", "m.meikäläinen@elisa.fi"))
-    ),
-    Newsletter(
-      NewsletterId(BigDecimal(3)),
-      NewsletterAttributes("Turbo Pascal for Beginners", NewsletterOwner("Mikko Meikäläinen", "m.meikäläinen@elisa.fi"))
-    )
-  )

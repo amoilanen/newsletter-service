@@ -1,3 +1,4 @@
+- Add logging
 - Add database access layer and migrations, several tables: newsletters, newsletter issues, and subscribers
 - REST API, basic operations: 
   -- Create newsletter
@@ -11,9 +12,9 @@
   -- Delete subscriber from all newsletters
   -- Add OpenAPI definition generated from the Tapir definition
 - Possible to add a subscriber to a newsletter via REST API
-- Possible to add a subscriber via an SQS message
+- Possible to add a subscriber via an SQS message (or Kafka - managed Kafka on AWS?)
 - Possible to create and publish a new newsletter issue via REST API
-- Possible to create and publish a new newsletter issue via an SQS message
+- Possible to create and publish a new newsletter issue via an SQS message (or Kafka - managed Kafka on AWS?)
 - When a new newsletter issue is pushed or updated it is possible to set a flag to publish it automatically also
 - If the flag is set the newsletter gets published: the subscribers get the emails sent using AWS SES
 
