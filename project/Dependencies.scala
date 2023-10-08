@@ -16,6 +16,7 @@ object Dependencies {
     val Mockito = "5.5.0"
     val Sttp = "3.9.0"
     val Circe = "0.14.6"
+    val KafkaClients = "3.6.0"
   }
 
   val catsEffect = Seq(
@@ -48,10 +49,12 @@ object Dependencies {
     "tapir-swagger-ui-bundle",
     "tapir-json-circe"
   ).map("com.softwaremill.sttp.tapir" %% _ % Version.Tapir)
+  val kafkaClients =
+    "org.apache.kafka" % "kafka-clients" % Version.KafkaClients
 
   val dependencies = catsEffect ++ Seq(catsCore) ++ Seq(flywayDb) ++
     Seq(pureconfigCore) ++ Seq(postgresqlDriver) ++ doobie ++
-    Seq(hikari) ++ tapir ++ Seq(http4s) ++ Seq(circe)
+    Seq(hikari) ++ tapir ++ Seq(http4s) ++ Seq(circe) ++ Seq(kafkaClients)
 
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % Version.MunitCatsEffect
   val mockito = "org.mockito" % "mockito-core" % Version.Mockito
