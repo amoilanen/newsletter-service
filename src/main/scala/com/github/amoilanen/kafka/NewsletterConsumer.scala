@@ -1,52 +1,63 @@
 package com.github.amoilanen.kafka
 
+import fs2.Stream
+import cats.effect.{IO, Resource}
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
+
 import java.time.Duration
-import java.util
-import java.util.Properties
-import scala.util.Using
+import cats.syntax.option.*
+
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 
 //TODO: Start the consumer as a part of the overall app
-//TODO: Use fs2
 //TODO: Parse JSON message
-class NewsletterConsumer:
+class NewsletterConsumer(kafkaConsumerConfig: KafkaConsumerConfig):
 
-  //TODO: This should be configurable
-  val servers = "localhost:9092"
+  def kafkaStream: Stream[IO, KafkaMessage[String, String]] =
+    val consumerResource = Resource.make(
+      IO {
+        val consumer = new KafkaConsumer[String, String](kafkaConsumerConfig.asProperties)
+        consumer.subscribe(List(kafkaConsumerConfig.topic).asJava)
+        consumer
+      }
+    )(consumer => IO(consumer.close()))
+    for
+      consumer <- Stream.resource[IO, KafkaConsumer[String, String]](consumerResource)
+      message <- Stream
+        .awakeEvery[IO](kafkaConsumerConfig.pollRate)
+        .evalMap(_ =>
+          IO(readMessages(consumer))
+        ).flatMap(Stream.emits(_))
+    yield
+      message
 
-  //TODO: This should be configurable
-  val topic = "newsletters"
-
-  //TODO: This should be configurable
-  val pollDurationMilliseconds = 250
-
-  private var keepConsuming: Boolean = true
-
-  private val consumerProperties =
-    val properties = new Properties
-    properties.put("bootstrap.servers", servers)
-    properties.put("group.id", topic)
-    properties.put("enable.auto.commit", "true")
-    properties.put("auto.commit.interval.ms", "1000")
-    properties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-    properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-    properties
-
-  def consume(): Unit =
-    Using(new KafkaConsumer[String, String](consumerProperties)) { consumer =>
-      consumer.subscribe(util.List.of(topic))
-      while (keepConsuming)
-        val records: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(pollDurationMilliseconds)) //<3>
-        records.forEach(record =>
-          println(s"consumed: offset = ${record.offset}, value = ${record.value}")
-        )
-    }
-
-  def shutdown(): Unit =
-    keepConsuming = false
+  private def readMessages(consumer: KafkaConsumer[String, String]): List[KafkaMessage[String, String]] =
+    val response: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(kafkaConsumerConfig.pollRate.toMillis))
+    val records = response.records(kafkaConsumerConfig.topic).iterator().asScala.toList
+    records.map(KafkaMessage.from(_))
 
 @main
 def newsletterConsumerMain(): Unit =
-  val consumer = NewsletterConsumer()
-  scala.sys.addShutdownHook(() => consumer.shutdown())
-  consumer.consume()
+  import cats.effect.unsafe.implicits.global
+  val kafkaConsumerConfig = KafkaConsumerConfig(
+    topic = "newsletters",
+    pollRate = 250.milliseconds,
+    servers = "localhost:9092",
+    autoCommit = true,
+    autoCommitInterval = 1000.milliseconds.some,
+    keyDeserializer = "org.apache.kafka.common.serialization.StringDeserializer",
+    valueDeserializer = "org.apache.kafka.common.serialization.StringDeserializer"
+  )
+  val consumer = NewsletterConsumer(kafkaConsumerConfig)
+  val result = consumer.kafkaStream.compile.foldChunks(IO.unit)((_, chunk) =>
+    chunk.foreach(message =>
+      println(s"consumed: offset = ${message.offset}, value = ${message.value}")
+    )
+    IO.unit
+  )
+  result.unsafeRunSync()
+
+  //TODO: Terminate the stream when the JVM is being shut down
+  //scala.sys.addShutdownHook(() => consumer.shutdown())
+  //Use Stream interruptWhen ?
