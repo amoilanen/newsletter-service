@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
 
 import java.time.Duration
 import cats.syntax.option.*
+import fs2.concurrent.{Signal, SignallingRef}
 
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
@@ -14,23 +15,25 @@ import scala.jdk.CollectionConverters.*
 //TODO: Parse JSON message
 class NewsletterConsumer(kafkaConsumerConfig: KafkaConsumerConfig):
 
-  def kafkaStream: Stream[IO, KafkaMessage[String, String]] =
-    val consumerResource = Resource.make(
-      IO {
-        val consumer = new KafkaConsumer[String, String](kafkaConsumerConfig.asProperties)
-        consumer.subscribe(List(kafkaConsumerConfig.topic).asJava)
-        consumer
-      }
-    )(consumer => IO(consumer.close()))
-    for
-      consumer <- Stream.resource[IO, KafkaConsumer[String, String]](consumerResource)
+  def kafkaStream(stopSignal: Signal[IO, Boolean]): Stream[IO, KafkaMessage[String, String]] =
+    (for
+      consumer <- Stream.resource(createConsumer(kafkaConsumerConfig))
       message <- Stream
         .awakeEvery[IO](kafkaConsumerConfig.pollRate)
         .evalMap(_ =>
           IO(readMessages(consumer))
         ).flatMap(Stream.emits(_))
     yield
-      message
+      message).interruptWhen(stopSignal)
+
+  private def createConsumer(kafkaConsumerConfig: KafkaConsumerConfig): Resource[IO, KafkaConsumer[String, String]] =
+    Resource.make(
+      IO {
+        val consumer = new KafkaConsumer[String, String](kafkaConsumerConfig.asProperties)
+        consumer.subscribe(List(kafkaConsumerConfig.topic).asJava)
+        consumer
+      }
+    )(consumer => IO(consumer.close()))
 
   private def readMessages(consumer: KafkaConsumer[String, String]): List[KafkaMessage[String, String]] =
     val response: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(kafkaConsumerConfig.pollRate.toMillis))
@@ -45,19 +48,18 @@ def newsletterConsumerMain(): Unit =
     pollRate = 250.milliseconds,
     servers = "localhost:9092",
     autoCommit = true,
-    autoCommitInterval = 1000.milliseconds.some,
-    keyDeserializer = "org.apache.kafka.common.serialization.StringDeserializer",
-    valueDeserializer = "org.apache.kafka.common.serialization.StringDeserializer"
+    autoCommitInterval = 250.milliseconds.some
   )
   val consumer = NewsletterConsumer(kafkaConsumerConfig)
-  val result = consumer.kafkaStream.compile.foldChunks(IO.unit)((_, chunk) =>
-    chunk.foreach(message =>
-      println(s"consumed: offset = ${message.offset}, value = ${message.value}")
+  val app = for
+    signal <- SignallingRef[IO, Boolean](false)
+    _ <- IO(scala.sys.addShutdownHook(() => signal.set(true).unsafeRunSync()))
+    _ <- consumer.kafkaStream(signal).compile.foldChunks(IO.unit)((_, chunk) =>
+      chunk.foreach(message =>
+        println(s"consumed: offset = ${message.offset}, value = ${message.value}")
+      )
+      IO.unit
     )
-    IO.unit
-  )
-  result.unsafeRunSync()
-
-  //TODO: Terminate the stream when the JVM is being shut down
-  //scala.sys.addShutdownHook(() => consumer.shutdown())
-  //Use Stream interruptWhen ?
+  yield
+    ()
+  app.unsafeRunSync()
