@@ -4,6 +4,6 @@ import org.mockito.Mockito.{mock => mockitoMock}
 import scala.reflect.ClassTag
 
 trait MockitoSugar:
-  def mock[T <: AnyRef](using ClassTag[T]): T =
-    val runtimeClass = summon[ClassTag[T]].runtimeClass
+  def mock[T <: AnyRef](using classTag: ClassTag[T]): T =
+    val runtimeClass = classTag.runtimeClass
     mockitoMock(runtimeClass.asInstanceOf[Class[T]])
