@@ -1,4 +1,4 @@
-package com.github.amoilanen.kafka
+package com.github.amoilanen.kafka.common
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 

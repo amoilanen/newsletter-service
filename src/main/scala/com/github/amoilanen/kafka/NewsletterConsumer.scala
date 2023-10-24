@@ -1,44 +1,21 @@
 package com.github.amoilanen.kafka
 
 import fs2.Stream
-import cats.effect.{IO, Resource}
-import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
+import cats.effect.IO
 
-import java.time.Duration
 import cats.syntax.option.*
 import fs2.concurrent.{Signal, SignallingRef}
 
+import com.github.amoilanen.kafka.common.{KafkaConsumer, KafkaConsumerConfig, KafkaMessage}
+
 import scala.concurrent.duration.*
-import scala.jdk.CollectionConverters.*
 
 //TODO: Start the consumer as a part of the overall app
 //TODO: Parse JSON message
-class NewsletterConsumer(kafkaConsumerConfig: KafkaConsumerConfig):
+class NewsletterConsumer(config: KafkaConsumerConfig):
 
-  def kafkaStream(stopSignal: Signal[IO, Boolean]): Stream[IO, KafkaMessage[String, String]] =
-    (for
-      consumer <- Stream.resource(createConsumer(kafkaConsumerConfig))
-      message <- Stream
-        .awakeEvery[IO](kafkaConsumerConfig.pollRate)
-        .evalMap(_ =>
-          IO(readMessages(consumer))
-        ).flatMap(Stream.emits(_))
-    yield
-      message).interruptWhen(stopSignal)
-
-  private def createConsumer(kafkaConsumerConfig: KafkaConsumerConfig): Resource[IO, KafkaConsumer[String, String]] =
-    Resource.make(
-      IO {
-        val consumer = new KafkaConsumer[String, String](kafkaConsumerConfig.asProperties)
-        consumer.subscribe(List(kafkaConsumerConfig.topic).asJava)
-        consumer
-      }
-    )(consumer => IO(consumer.close()))
-
-  private def readMessages(consumer: KafkaConsumer[String, String]): List[KafkaMessage[String, String]] =
-    val response: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(kafkaConsumerConfig.pollRate.toMillis))
-    val records = response.records(kafkaConsumerConfig.topic).iterator().asScala.toList
-    records.map(KafkaMessage.from(_))
+  def newsletterStream(stopSignal: Signal[IO, Boolean]): Stream[IO, KafkaMessage[String, String]] =
+    KafkaConsumer(config).kafkaStream(stopSignal)
 
 @main
 def newsletterConsumerMain(): Unit =
@@ -48,13 +25,14 @@ def newsletterConsumerMain(): Unit =
     pollRate = 250.milliseconds,
     servers = "localhost:9092",
     autoCommit = true,
+    //TODO: If autoCommit is false, then commit the offset explicitly in the stream
     autoCommitInterval = 250.milliseconds.some
   )
   val consumer = NewsletterConsumer(kafkaConsumerConfig)
   val app = for
     signal <- SignallingRef[IO, Boolean](false)
     _ <- IO(scala.sys.addShutdownHook(() => signal.set(true).unsafeRunSync()))
-    _ <- consumer.kafkaStream(signal).compile.foldChunks(IO.unit)((_, chunk) =>
+    _ <- consumer.newsletterStream(signal).compile.foldChunks(IO.unit)((_, chunk) =>
       chunk.foreach(message =>
         println(s"consumed: offset = ${message.offset}, value = ${message.value}")
       )

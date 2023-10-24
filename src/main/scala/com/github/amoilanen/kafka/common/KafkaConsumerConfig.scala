@@ -1,4 +1,4 @@
-package com.github.amoilanen.kafka
+package com.github.amoilanen.kafka.common
 
 import java.util.Properties
 import scala.concurrent.duration.FiniteDuration
@@ -6,7 +6,7 @@ import scala.concurrent.duration.FiniteDuration
 case class KafkaConsumerConfig(topic: String, pollRate: FiniteDuration, servers: String,
                                autoCommit: Boolean, autoCommitInterval: Option[FiniteDuration]):
 
-  lazy val asProperties: Properties =
+  private[common] lazy val asProperties: Properties =
     val properties = new Properties
     properties.put("bootstrap.servers", servers)
     properties.put("group.id", topic)
